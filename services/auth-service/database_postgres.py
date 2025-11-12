@@ -30,36 +30,36 @@ class DatabaseManager:
 
     def __init__(self, db_config: dict = DB_CONFIG):
         self.db_config = db_config
-        self.init_database()
+        # self.init_database()
 
     def get_connection(self):
         """Get a database connection"""
         conn = psycopg2.connect(**self.db_config)
         return conn
 
-    def init_database(self):
-        """Initialize database with schema"""
-        schema_path = os.path.join(os.path.dirname(__file__), 'schema_postgres.sql')
+    # def init_database(self):
+    #     """Initialize database with schema"""
+    #     schema_path = os.path.join(os.path.dirname(__file__), 'schema_postgres.sql')
 
-        if os.path.exists(schema_path):
-            with open(schema_path, 'r') as f:
-                schema_sql = f.read()
+    #     if os.path.exists(schema_path):
+    #         with open(schema_path, 'r') as f:
+    #             schema_sql = f.read()
 
-            conn = self.get_connection()
-            try:
-                cursor = conn.cursor()
-                cursor.execute(schema_sql)
-                conn.commit()
-                logger.info("Database initialized successfully")
-            except Exception as e:
-                logger.error(f"Error initializing database: {str(e)}")
-                conn.rollback()
-                raise
-            finally:
-                cursor.close()
-                conn.close()
-        else:
-            logger.warning(f"Schema file not found at {schema_path}")
+    #         conn = self.get_connection()
+    #         try:
+    #             cursor = conn.cursor()
+    #             cursor.execute(schema_sql)
+    #             conn.commit()
+    #             logger.info("Database initialized successfully")
+    #         except Exception as e:
+    #             logger.error(f"Error initializing database: {str(e)}")
+    #             conn.rollback()
+    #             raise
+    #         finally:
+    #             cursor.close()
+    #             conn.close()
+    #     else:
+    #         logger.warning(f"Schema file not found at {schema_path}")
 
     def execute_query(self, query: str, params: tuple = ()) -> List[Dict]:
         """Execute a SELECT query and return results as list of dicts"""
