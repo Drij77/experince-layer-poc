@@ -75,5 +75,4 @@ CMD ["gunicorn", "app:app", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
      "--log-level", "info", \
-     "--timeout", "120", \
-     "--keepalive", "5"]
+     "--timeout", "120"]
