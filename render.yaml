@@ -1,0 +1,111 @@
+# Render Blueprint for Auth Service
+# This file defines all infrastructure needed to deploy the auth service on Render
+
+services:
+  # Auth Service - FastAPI Web Service
+  - type: web
+    name: auth-service
+    runtime: docker
+    region: oregon  # Change to your preferred region: oregon, frankfurt, singapore, ohio
+    plan: free  # Options: free, starter, standard, pro
+    branch: main  # Change to your deployment branch
+    rootDir: services/auth-service
+    dockerfilePath: services/auth-service/Dockerfile
+    dockerContext: services/auth-service
+    # Build arguments for production target
+    dockerCommand: gunicorn app:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+    healthCheckPath: /health
+    autoDeploy: true  # Auto-deploy on git push
+
+    envVars:
+      # Service Configuration
+      - key: SERVICE_NAME
+        value: auth-service
+      - key: SERVICE_PORT
+        value: 8000
+      - key: ENVIRONMENT
+        value: production
+
+      # Database Configuration - Uses internal connection from Render PostgreSQL
+      - key: DB_TYPE
+        value: postgresql
+      - key: DB_HOST
+        fromDatabase:
+          name: auth-postgres
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: auth-postgres
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: auth-postgres
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: auth-postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: auth-postgres
+          property: password
+
+      # Redis Configuration - Uses internal connection from Render Redis
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: auth-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: auth-redis
+          property: port
+      - key: REDIS_PASSWORD
+        value: ""  # Render free Redis typically has no password, or leave empty
+      - key: REDIS_DB
+        value: 0
+
+      # Session Management
+      - key: SESSION_STORE
+        value: redis  # Options: redis, postgres, hybrid
+      - key: SESSION_TIMEOUT
+        value: 3600  # 1 hour in seconds
+      - key: SESSION_SECURE
+        value: true  # Enable secure cookies in production
+      - key: COOKIE_SAMESITE
+        value: lax  # Options: lax, strict, none
+
+      # JWT Configuration
+      - key: JWT_SECRET
+        generateValue: true  # Render will auto-generate a secure random value
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRATION
+        value: 3600  # 1 hour in seconds
+
+      # CORS Configuration
+      - key: CORS_ORIGINS
+        value: https://your-frontend-app.onrender.com  # Update with your frontend URL
+
+      # Logging
+      - key: LOG_LEVEL
+        value: INFO
+
+  # Redis - Key-Value Store for Sessions
+  - type: redis
+    name: auth-redis
+    region: oregon  # Must match web service region for internal networking
+    plan: free  # Free: 25MB ephemeral storage (no persistence)
+    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys when memory is full
+    ipAllowList: []  # Empty = only internal Render services can connect
+
+databases:
+  # PostgreSQL Database
+  - name: auth-postgres
+    region: oregon  # Must match web service region for internal networking
+    plan: free  # Free: 1GB storage, expires after 90 days
+    databaseName: auth_db
+    user: auth_user
+    # Render will auto-generate a secure password
+    ipAllowList: []  # Empty = only internal Render services can connect
