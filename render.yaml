@@ -106,4 +106,5 @@ databases:
     databaseName: auth_db
     user: auth_user
     # Render will auto-generate a secure password
-    ipAllowList: []  # Empty = only internal Render services can connect
+    ipAllowList:
+       - source: 0.0.0.0/0 # Allow connections from anywhere (for development); restrict in production
